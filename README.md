@@ -18,7 +18,7 @@ const command = new helper.Command(client, {
 })
 command.on("execute", ({ msg }) => {
     msg.reply("Success!")
-}
+})
 command.listen()
 client.login(token)
 ```
