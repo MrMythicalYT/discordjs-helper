@@ -50,9 +50,9 @@ class Command {
         this.validate()
         this.execute && (this.execute ??= execute);
         if (typeof this.execute !== 'function') throw new TypeError('execute must be type function')
-        this.slash ? this.client.on("messageCreate", m => {
+        this.client.on("messageCreate", m => {
             this.validate()
-            if (!m.startsWith(this.client.prefix + this.name))
+            if (!m.content.startsWith(this.client.prefix + this.name))
             if (!m.guild && !this.allowDm) return;
             if (m.member && !m.member.permissions.has(this.permissions)) {
                 this.missingPerms(this.permissions, this.botPermissions)
@@ -61,11 +61,6 @@ class Command {
                 msg: m,
                 command: this,
                 args: new Args(m.content.slice(this.name.length).split(/ +/g), this.args)
-            })
-        }) : this.client.on("interactionCreate", i => {
-            execute({
-                interaction: i,
-                command: this
             })
         })
         
@@ -84,7 +79,7 @@ class Command {
             if (!nameType) errors.push(`Invalid type for arg name (index ${i}). Names must be non-empty strings`)
             if (!descType) errors.push(`Invalid type for arg description (index ${i}). Descriptions must either be nullish or a string`)
         })
-        if (this.errors.length) throw new Error(`Validation failed:\n${errors.join('\n')}`)
+        if (errors.length) throw new Error(`Validation failed:\n${errors.join('\n')}`)
     }
 }
 
