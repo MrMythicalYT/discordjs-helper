@@ -4,11 +4,10 @@
   "main": "./src/index",
   "description": "A package to help with developing in discord.js",
   "scripts": {
-    "test": "echo \"Test succeeded\"",
-    "pub": "git push && npm publish --access=publish"
+    "test": "echo \"Test succeeded\""
   },
   "dependencies": {
     "discord.js": "^13.6.0"
   },
-  "version": "1.1.0"
+  "version": "1.1.3"
 }

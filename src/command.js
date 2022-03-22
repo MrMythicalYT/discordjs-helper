@@ -1,18 +1,16 @@
 const Args = require("./args")
+const { Permissions, Client } = require("discord.js")
+const { EventEmitter } = require("node:events")
 
-class Command {
+class Command extends EventEmitter {
+    #disabled = false
     /**
      * 
      * @param {import("discord.js").Client} client 
      * @param {{name: string, args?: Array<{name: string, description?: string}>, permissions?: import("discord.js").PermissionResolvable, botPermissions?: import("discord.js").PermissionResolvable, slash?: boolean, allowDm?: boolean, description?: string}} param1 
      */
-    constructor(client, { name, args=[], permissions=0, botPermissions=0, allowDm=false, description }) {
-        this.execute = function () {
-            console.warn("Executed empty command, this may need to be fixed. Set `execute` property of the command")
-        }
-        this.missingPerms = function() {
-            console.warn("Executed command with missing permissions, but function not set for missing permissions. Set `missingPerms` property of the command")
-        }
+    constructor(client, { name, args=[], permissions=[], botPermissions=[], allowDm=false, description }) {
+        super()
         /**
          * @type {string}
          * The name of the command
@@ -23,18 +21,18 @@ class Command {
          */
         this.args = args
         /**
-         * @type {import("discord.js").PermissionResolvable}
+         * @type {Permissions}
          * The permissions the member needs
          */
-        this.permissions = permissions
+        this.permissions = new Permissions(permissions)
         /**
-         * @type {import("discord.js").PermissionResolvable}
+         * @type {Permissions}
          * The permissions the bot needs
          */
-        this.botPermissions = botPermissions
+        this.botPermissions = new Permissions(botPermissions)
         
         /**
-         * @type {import("discord.js").Client}
+         * @type {Client}
          */
         this.client =  client
         /**
@@ -48,34 +46,42 @@ class Command {
          */
         this.description = description
     }
-    listen(execute) {
+    listen() {
         this.validate()
-        execute && (this.execute ??= execute)
-        if (typeof this.execute !== 'function') throw new TypeError('execute must be type function')
         this.client.on("messageCreate", m => {
+            if (this.#disabled) return;
             this.validate()
             if (m.author.bot) return;
             if (!m.content.startsWith(this.client.prefix + this.name)) return;
             if (!m.guild && !this.allowDm) return;
             if (m.member && !m.member.permissions.has(this.permissions)) {
-                this.missingPerms(this.permissions, this.botPermissions)
+                return this.emit("missingPerms", {
+                    msg: m,
+                    member: m.member,
+                    requiredPerms: this.permissions,
+                    type: m.guild?.me.permissions.has(this.botPermissions) ? "BOTH" : "MEMBER"
+                })
+            } else if (m.guild && !m.guild?.me.permissions.has(this.botPermissions)) {
+                return this.emit("missingPerms", {
+                    msg: m,
+                    member: m.member,
+                    requiredPerms: this.permissions,
+                    type: "BOT",
+                    command: this
+                })
             }
-            this.execute({
+            this.emit("execute", {
                 msg: m,
                 command: this,
-                args: new Args(m.content.slice(this.name.length).split(/ +/g), this.args)
+                args: new Args(m.content.slice(this.client.prefix.length + this.name.length + 1).split(/ +/g), this.args)
             })
         })
-        
+        return this;
     }
     validate() {
         let errors = []
         let validPrefix = this.client.prefix && typeof this.client.prefix === 'string'
         if (!validPrefix) errors.push(`Invalid prefix provided for client. Prefix must be a non-empty string`)
-        let validExecute = typeof this.execute === 'function'
-        if (!validExecute) errors.push(`Invalid type for execute function. Received type ${typeof this.execute}`)
-        let validMissingPerms = typeof this.missingPerms === 'function'
-        if (!validMissingPerms) errors.push(`Invalid type for missingPerms function. Received ${typeof this.missingPerms}`)
         this.args.forEach((a, i) => {
             let nameType = a.name && typeof a.name === 'string'
             let descType = a.description == null ? true : typeof a.description === 'string'
@@ -83,6 +89,13 @@ class Command {
             if (!descType) errors.push(`Invalid type for arg description (index ${i}). Descriptions must either be nullish or a string`)
         })
         if (errors.length) throw new Error(`Validation failed:\n${errors.join('\n')}`)
+    }
+    get disabled() {
+        return this.#disabled
+    }
+    setDisabled(d=true) {
+        this.#disabled = !!d
+        return this;
     }
 }
 

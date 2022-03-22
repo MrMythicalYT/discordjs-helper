@@ -1,4 +1,6 @@
-import { Client as C, CommandInteraction, Message, PermissionResolvable } from "discord.js"
+import { Client as C, CommandInteraction, GuildMember, Message, PermissionResolvable } from "discord.js"
+import { EventEmitter } from "node:events"
+import { Permissions } from "discord.js"
 
 export class Args extends Map {
     public set(): void
@@ -26,11 +28,36 @@ export type CommandData = {
     interaction: CommandInteraction
 }
 
-export class Command {
+declare interface Events {
+    missingPerms: [{
+        member: GuildMember
+        msg: Message
+        requiredPerms: PermissionResolvable
+        type: "BOTH" | "BOT" | "MEMBER"
+        command: Command
+    }]
+    execute: [{
+        msg: Message
+        command: Command
+        args: Args
+    }]
+}
+
+export class Command extends EventEmitter {
     public constructor(client: C, options: CommandOptions)
-    public execute(options: CommandData): any
+    public on<E extends keyof Events>(eventName: E, listener: (...args: Events[E]) => any): this
+    public emit<E extends keyof Events>(eventName: E, ...args: Events[E]): this
     public validate(): void
-    public listen(): void
+    public listen(): this
+    public readonly disabled: boolean
+    public setDisabled(d?: boolean): this
+    public name: string
+    public args?: Arg[]
+    public permissions?: Permissions
+    public botPermissions?: Permissions
+    //slash?: boolean, 
+    public allowDm?: boolean
+    public description?: string
 }
 
 export class Client extends C {
