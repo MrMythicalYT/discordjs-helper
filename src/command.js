@@ -50,7 +50,7 @@ class Command {
     }
     listen(execute) {
         this.validate()
-        this.execute && (this.execute ??= execute);
+        execute && (this.execute ??= execute)
         if (typeof this.execute !== 'function') throw new TypeError('execute must be type function')
         this.client.on("messageCreate", m => {
             this.validate()
@@ -59,7 +59,7 @@ class Command {
             if (m.member && !m.member.permissions.has(this.permissions)) {
                 this.missingPerms(this.permissions, this.botPermissions)
             }
-            execute({
+            this.execute({
                 msg: m,
                 command: this,
                 args: new Args(m.content.slice(this.name.length).split(/ +/g), this.args)
