@@ -1,0 +1,12 @@
+{
+  "name": "discordjs-helper",
+  "types": "./typings/index",
+  "main": "./src/index",
+  "description": "A package to help with developing in discord.js",
+  "scripts": {
+    "test": "echo \"Test succeeded\""
+  },
+  "dependencies": {
+    "discord.js": "^13.6.0"
+  }
+}
