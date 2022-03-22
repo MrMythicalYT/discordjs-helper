@@ -5,3 +5,5 @@ class Args extends Map {
         this.set = function () {}
     }
 }
+
+module.exports = Args

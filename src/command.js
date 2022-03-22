@@ -1,3 +1,5 @@
+const Args = require("./args")
+
 class Command {
     /**
      * 
