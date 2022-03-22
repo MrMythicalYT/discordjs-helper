@@ -54,7 +54,8 @@ class Command {
         if (typeof this.execute !== 'function') throw new TypeError('execute must be type function')
         this.client.on("messageCreate", m => {
             this.validate()
-            if (!m.content.startsWith(this.client.prefix + this.name))
+            if (m.author.bot) return;
+            if (!m.content.startsWith(this.client.prefix + this.name)) return;
             if (!m.guild && !this.allowDm) return;
             if (m.member && !m.member.permissions.has(this.permissions)) {
                 this.missingPerms(this.permissions, this.botPermissions)
