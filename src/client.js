@@ -1,9 +1,15 @@
 const { Client: C } = require("discord.js")
+const CommandManager = require("./commandManager")
 
 class Client extends C {
+    /**
+     * @type {string}
+     */
     #_prefix = null
     constructor(options) {
         super(options)
+        this.autoListen = Boolean(options?.autoListen ?? true)
+        this.commands = new CommandManager(this)
     }
     login(t) {
         if (!this.#_prefix) throw new TypeError('Prefix must be set for the client')

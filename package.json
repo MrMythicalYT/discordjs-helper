@@ -4,11 +4,11 @@
   "main": "./src/index",
   "description": "A package to help with developing in discord.js",
   "scripts": {
-    "test": "echo \"Test succeeded\""
+    "test": "node tests.js"
   },
   "dependencies": {
     "discord.js": "^13.6.0"
   },
-  "version": "1.1.4",
+  "version": "1.2.1",
   "homepage": "https://github.com/MrMythicalYT/discordjs-helper#readme"
 }

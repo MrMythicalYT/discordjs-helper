@@ -2,15 +2,17 @@ const Args = require("./args")
 const { Permissions, Client } = require("discord.js")
 const { EventEmitter } = require("node:events")
 
+
 class Command extends EventEmitter {
     #disabled = false
     /**
      * 
-     * @param {import("discord.js").Client} client 
-     * @param {{name: string, args?: Array<{name: string, description?: string}>, permissions?: import("discord.js").PermissionResolvable, botPermissions?: import("discord.js").PermissionResolvable, slash?: boolean, allowDm?: boolean, description?: string}} param1 
+     * @param {import(".").Client} client 
+     * @param {{name: string, args?: Array<{name: string, description?: string}>, permissions?: import("discord.js").PermissionResolvable, botPermissions?: import("discord.js").PermissionResolvable, slash?: boolean, allowDm?: boolean, description?: string, aliases?: string[]}} param1 
      */
-    constructor(client, { name, args=[], permissions=[], botPermissions=[], allowDm=false, description }) {
+    constructor(client, { name, args=[], permissions=[], botPermissions=[], allowDm=false, description, aliases=[] }) {
         super()
+        this.listening = false;
         /**
          * @type {string}
          * The name of the command
@@ -32,7 +34,7 @@ class Command extends EventEmitter {
         this.botPermissions = new Permissions(botPermissions)
         
         /**
-         * @type {Client}
+         * @type {import("./client")}
          */
         this.client =  client
         /**
@@ -45,6 +47,14 @@ class Command extends EventEmitter {
          * The description of the command
          */
         this.description = description
+        /**
+         * @type {string[]}
+         * Aliases for this command
+         */
+        this.aliases = aliases
+
+        client.commands.setCommand(this)
+        if (client.autoListen) this.listen()
     }
     listen() {
         this.validate()
@@ -52,7 +62,8 @@ class Command extends EventEmitter {
             if (this.#disabled) return;
             this.validate()
             if (m.author.bot) return;
-            if (!m.content.startsWith(this.client.prefix + this.name)) return;
+            let [ cmd, ...args ] = m.content.slice(this.client.prefix.length).split(/ +/g)
+            if (this.name !== cmd && !this.aliases.includes(cmd)) return;
             if (!m.guild && !this.allowDm) return;
             if (m.member && !m.member.permissions.has(this.permissions)) {
                 return this.emit("missingPerms", {
@@ -73,16 +84,25 @@ class Command extends EventEmitter {
             this.emit("execute", {
                 msg: m,
                 command: this,
-                args: new Args(m.content.slice(this.client.prefix.length + this.name.length + 1).split(/ +/g), this.args)
+                args: new Args(args, this.args)
             })
         })
+        this.listening = true
         return this;
     }
     validate() {
         let errors = []
         let validPrefix = this.client.prefix && typeof this.client.prefix === 'string'
         if (!validPrefix) errors.push(`Invalid prefix provided for client. Prefix must be a non-empty string`)
-        this.args.forEach((a, i) => {
+        if (!Array.isArray(this.aliases)) errors.push(`Invalid type for aliases. It must be an array of strings`)
+        else { 
+            this.aliases.forEach?.((a, i) => {
+            let valid = typeof a === 'string'
+            if (!valid) errors.push(`Invalid type for alias (index ${i}). It must be a string`)
+        })
+    }
+    if (!Array.isArray(this.args)) errors.push(`Invalid type for args. It must be an array of strings`)
+        this.args.forEach?.((a, i) => {
             let nameType = a.name && typeof a.name === 'string'
             let descType = a.description == null ? true : typeof a.description === 'string'
             if (!nameType) errors.push(`Invalid type for arg name (index ${i}). Names must be non-empty strings`)
@@ -95,6 +115,78 @@ class Command extends EventEmitter {
     }
     setDisabled(d=true) {
         this.#disabled = !!d
+        return this;
+    }
+    setName(name) {
+        this.name = name
+        this.validate()
+        return this;
+    }
+    setDescription(desc) {
+        this.description = desc
+        this.validate()
+        return this;
+    }
+    setAllowDm(bool) {
+        this.allowDm = bool
+        this.validate()
+        return this;
+    }
+    setArgs(args) {
+        this.args = args
+        this.validate()
+        return this;
+    }
+    addArgs(...args) {
+        args.flat(Infinity).forEach((a) => this.args.push(a))
+        this.validate()
+        return this;
+    }
+    deleteArg(argName) {
+        if (!this.args.find(a => a.name === argName)) return this;
+        this.args.splice(this.args.findIndex(a => a.name === argName), 1)
+        this.validate()
+        return this;
+    }
+    clearArgs() {
+        this.args = []
+        this.validate()
+        return this;
+    }
+    addAliases(...aliases) {
+        aliases.flat(Infinity).forEach((a) => this.aliases.push(a))
+        this.validate()
+        return this;
+    }
+    deleteAlias(alias) {
+        if (!this.aliases.includes(alias)) return this;
+        this.aliases.splice(this.aliases.indexOf(alias), 1)
+        this.validate()
+        return this;
+    }
+    setAliases(aliases) {
+        this.aliases = aliases
+        this.validate()
+        return this;
+    }
+    setPermissions(permission) {
+        this.permissions = new Permissions(permission)
+        this.validate()
+        return this;
+    }
+    addPermissions(...permissions) {
+        this.permissions = this.permissions.add(permissions)
+        this.validate()
+        return this;
+    }
+    setBotPermissions(permission) {
+        this.botPermissions = new Permissions(permission)
+        this.validate()
+        return this;
+    }
+    addBotPermissions(...permissions) {
+        this.botPermissions = this.permissions.add(permissions)
+        this.validate()
         return this;
     }
 }
