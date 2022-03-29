@@ -1,5 +1,5 @@
 const Args = require("./args")
-const { Permissions, Client } = require("discord.js")
+const { Permissions } = require("discord.js")
 const { EventEmitter } = require("node:events")
 
 
@@ -41,7 +41,7 @@ class Command extends EventEmitter {
          * @type {boolean}
          * Whether to allow this command to be run in DM, permissions will not be checked if this is true
          */
-        this.allowDm = allowDm
+        this.allowDm = Boolean(allowDm)
         /**
          * @type {string}
          * The description of the command
@@ -57,6 +57,7 @@ class Command extends EventEmitter {
         if (client.autoListen) this.listen()
     }
     listen() {
+        if (this.listening) throw new Error(`Cannot listen to command ${this.name} multiple times`)
         this.validate()
         this.client.on("messageCreate", m => {
             if (this.#disabled) return;
