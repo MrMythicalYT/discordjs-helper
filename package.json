@@ -3,12 +3,13 @@
   "typings": "./typings/index.d.ts",
   "main": "./src/index",
   "description": "A package to help with developing in discord.js",
+  "keywords": ["discord", "api", "discord-api", "discord.js", "discordjs", "helper"],
   "scripts": {
     "test": "node tests.js"
   },
   "dependencies": {
     "discord.js": "^13.6.0"
   },
-  "version": "2.0.0",
+  "version": "2.0.1",
   "homepage": "https://github.com/MrMythicalYT/discordjs-helper#readme"
 }
