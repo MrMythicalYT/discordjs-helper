@@ -19,7 +19,7 @@ const command = new Command(client, {
     aliases: ["t"]
 })
 command.on("execute", ({ msg }) => {
-  data.msg.reply("Success!")
+  msg.reply("Success!")
 })
 
 client.on("ready", () => console.log("Ready"))
